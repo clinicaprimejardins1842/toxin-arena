@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>TOXIN ARENA — Quiz de Toxina Botulínica</title>
+<meta name="description" content="Quiz gamificado clínico de toxina botulínica aplicada à estética e dermatologia. 20 questões práticas." />
+<style>
+/* ============================================================
+   IDENTIDADE VISUAL — paleta "sala clínica noturna"
+   Tipografia preferida: Sora / Space Grotesk / Space Mono
+   (sem assets remotos — usa fallback de sistema se ausente)
+   ============================================================ */
+:root{
+  --bg:#05080f;
+  --bg2:#0a1322;
+  --panel:#0d1828;
+  --panel2:#11203a;
+  --line:#1c3556;
+  --cyan:#23e7d6;       /* ciano de monitor */
+  --cyan-soft:#7af5ea;
+  --magenta:#ff3d8b;    /* magenta de lesão */
+  --amber:#ffae39;      /* brasa/âmbar do streak */
+  --green:#39ff9e;
+  --red:#ff4757;
+  --txt:#e8f3ff;
+  --txt-dim:#8aa6c8;
+  --gold:#ffd54a;
+  --titulo:'Sora','Space Grotesk','Segoe UI',system-ui,sans-serif;
+  --corpo:'Space Grotesk','Segoe UI',system-ui,sans-serif;
+  --mono:'Space Mono','SFMono-Regular',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--corpo);
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(35,231,214,.10), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(255,61,139,.10), transparent 60%),
+    var(--bg);
+  color:var(--txt);
+  overflow-x:hidden;
+  min-height:100%;
+}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
+.mono{font-family:var(--mono)}
+
+/* ===== App container ===== */
+#app{max-width:760px;margin:0 auto;padding:14px;min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:2}
+
+/* ===== Telas ===== */
+.screen{display:none;animation:fadeIn .4s ease}
+.screen.active{display:flex;flex-direction:column;flex:1}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ===== Marca ===== */
+.brand{display:flex;align-items:center;gap:10px;justify-content:center;margin:10px 0 4px}
+.brand .pulse{width:120px;height:34px}
+.brand h1{font-family:var(--titulo);font-weight:800;letter-spacing:2px;font-size:clamp(26px,7vw,40px);
+  background:linear-gradient(90deg,var(--cyan),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+.subtitle{text-align:center;color:var(--txt-dim);font-size:13px;letter-spacing:.5px;margin-bottom:18px}
+
+/* ===== Cards / painéis ===== */
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-radius:18px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.card + .card{margin-top:14px}
+
+/* ===== Inputs ===== */
+label.fld{display:block;font-size:12px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px}
+input.txt{width:100%;background:#07101e;border:1px solid var(--line);color:var(--txt);border-radius:12px;
+  padding:14px 14px;font-size:16px;font-family:var(--corpo);outline:none;transition:border .2s,box-shadow .2s}
+input.txt:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(35,231,214,.18)}
+.hint{font-size:12px;color:var(--txt-dim);margin-top:8px;line-height:1.5}
+.err{color:var(--red);font-size:13px;margin-top:8px;min-height:18px}
+
+/* ===== Botões ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:15px 18px;border-radius:14px;font-weight:700;font-size:16px;letter-spacing:.4px;
+  background:linear-gradient(90deg,var(--cyan),#19b9ab);color:#04141a;transition:transform .12s,filter .2s,box-shadow .2s;
+  box-shadow:0 10px 26px rgba(35,231,214,.25)}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(2px) scale(.99)}
+.btn.ghost{background:#0c1a2e;color:var(--txt);border:1px solid var(--line);box-shadow:none}
+.btn.magenta{background:linear-gradient(90deg,var(--magenta),#c52469);color:#fff;box-shadow:0 10px 26px rgba(255,61,139,.25)}
+.btn.amber{background:linear-gradient(90deg,var(--amber),#e0871f);color:#1a1003;box-shadow:0 10px 26px rgba(255,174,57,.25)}
+.btn.small{width:auto;padding:10px 16px;font-size:14px}
+.btn-row{display:flex;gap:10px;margin-top:14px}
+.btn-row .btn{flex:1}
+
+/* ===== Seleção de modo ===== */
+.modes{display:grid;gap:12px;margin-top:6px}
+.mode{display:flex;gap:14px;align-items:center;text-align:left;background:#0b1626;border:1px solid var(--line);
+  border-radius:16px;padding:16px;transition:border .15s,transform .12s,background .2s;width:100%}
+.mode:hover{border-color:var(--cyan);transform:translateY(-2px)}
+.mode .ico{font-size:30px;width:46px;text-align:center;flex:none}
+.mode .mt{font-family:var(--titulo);font-weight:700;font-size:18px}
+.mode .md{font-size:13px;color:var(--txt-dim);margin-top:3px;line-height:1.45}
+.mode .badge{margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--amber);border:1px solid rgba(255,174,57,.4);
+  padding:4px 8px;border-radius:20px;white-space:nowrap}
+
+/* ===== HUD (jogo) ===== */
+.hud{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.hud-top{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.hud-left{display:flex;align-items:center;gap:10px}
+.lvtag{font-family:var(--mono);font-weight:700;font-size:13px;background:#07131f;border:1px solid var(--line);
+  border-radius:10px;padding:6px 10px;color:var(--cyan)}
+.hearts{display:flex;gap:4px;font-size:18px;filter:drop-shadow(0 0 6px rgba(255,61,139,.4))}
+.heart.lost{opacity:.18;filter:grayscale(1)}
+.acc{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--green);text-align:right}
+.acc small{display:block;color:var(--txt-dim);font-size:10px;letter-spacing:1px}
+
+/* XP bar — estilo monitor de sinais vitais */
+.xpwrap{position:relative;height:16px;background:#06101c;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.xpfill{position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--cyan),var(--cyan-soft));
+  border-radius:20px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.xpwrap svg.ecg{position:absolute;inset:0;width:100%;height:100%;opacity:.55;mix-blend-mode:screen}
+.xplabel{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:#04141a;font-weight:700}
+
+/* Combo + timer */
+.hud-mid{display:flex;align-items:center;gap:10px}
+.combo{font-family:var(--titulo);font-weight:800;font-size:15px;color:var(--amber);
+  text-shadow:0 0 12px rgba(255,174,57,.6);transition:transform .15s;min-width:78px}
+.combo.bump{transform:scale(1.35)}
+.timerwrap{flex:1;height:8px;background:#06101c;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.timerfill{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--cyan));transition:width 1s linear,background .3s}
+.timerfill.warn{background:linear-gradient(90deg,var(--amber),var(--red))}
+.tnum{font-family:var(--mono);font-size:13px;color:var(--txt-dim);min-width:30px;text-align:right}
+
+/* trilha de progresso */
+.track{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.dot{width:9px;height:9px;border-radius:50%;background:#13243c;border:1px solid var(--line)}
+.dot.done{background:var(--cyan)}
+.dot.miss{background:var(--red)}
+.dot.now{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+
+/* ===== Questão ===== */
+.qtag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--cyan);border:1px solid rgba(35,231,214,.35);border-radius:20px;padding:4px 10px;margin-bottom:10px}
+.qtag.dif-facil{color:var(--green);border-color:rgba(57,255,158,.35)}
+.qtag.dif-media{color:var(--amber);border-color:rgba(255,174,57,.35)}
+.qtag.dif-dificil{color:var(--magenta);border-color:rgba(255,61,139,.4)}
+.figure{display:flex;justify-content:center;align-items:center;background:#06101c;border:1px solid var(--line);
+  border-radius:14px;padding:8px;margin:4px 0 14px;min-height:140px}
+.figure svg{width:100%;max-width:320px;height:auto}
+.qtext{font-family:var(--titulo);font-size:clamp(17px,4.4vw,21px);line-height:1.4;font-weight:600;margin-bottom:14px}
+.alts{display:grid;gap:10px}
+.alt{display:flex;gap:12px;align-items:flex-start;text-align:left;background:#0b1626;border:1px solid var(--line);
+  border-radius:13px;padding:14px;transition:border .12s,background .15s,transform .1s;width:100%;font-size:15.5px;line-height:1.35}
+.alt:hover:not(.disabled){border-color:var(--cyan);transform:translateX(3px)}
+.alt .key{font-family:var(--mono);font-weight:700;width:26px;height:26px;flex:none;display:grid;place-items:center;
+  border-radius:8px;background:#13243c;color:var(--cyan);font-size:13px}
+.alt.correct{border-color:var(--green);background:rgba(57,255,158,.12)}
+.alt.correct .key{background:var(--green);color:#04140a}
+.alt.wrong{border-color:var(--red);background:rgba(255,71,87,.12)}
+.alt.wrong .key{background:var(--red);color:#fff}
+.alt.disabled{cursor:default}
+
+/* explicação slide-in */
+.explain{margin-top:14px;border-left:3px solid var(--cyan);background:#08141f;border-radius:0 12px 12px 0;
+  padding:14px 16px;max-height:0;opacity:0;overflow:hidden;transition:max-height .45s ease,opacity .4s,padding .3s}
+.explain.show{max-height:400px;opacity:1;padding:14px 16px}
+.explain h4{font-family:var(--titulo);font-size:14px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.explain.ok h4{color:var(--green)} .explain.no h4{color:var(--red)}
+.explain p{font-size:14.5px;line-height:1.55;color:#cfe3f7}
+.nextbtn{margin-top:12px}
+
+/* ===== Resultado ===== */
+.result-head{text-align:center;padding:8px 0 4px}
+.tier{font-family:var(--titulo);font-weight:800;font-size:clamp(26px,8vw,40px);
+  background:linear-gradient(90deg,var(--gold),var(--amber));-webkit-background-clip:text;background-clip:text;color:transparent}
+.medal{font-size:64px;margin:6px 0;filter:drop-shadow(0 6px 18px rgba(255,213,74,.4))}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.stat{background:#0b1626;border:1px solid var(--line);border-radius:14px;padding:14px 8px;text-align:center}
+.stat .v{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--cyan)}
+.stat .l{font-size:11px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+
+/* ===== Ranking ===== */
+.rank-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.rank{display:flex;align-items:center;gap:12px;background:#0b1626;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.rank.me{border-color:var(--cyan);background:rgba(35,231,214,.08)}
+.rank .pos{font-family:var(--mono);font-weight:700;width:30px;color:var(--amber)}
+.rank .nm{font-weight:700}
+.rank .meta{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--txt-dim);text-align:right}
+.rank .meta b{color:var(--cyan)}
+.empty{text-align:center;color:var(--txt-dim);padding:20px;font-size:14px}
+
+/* ===== Modal ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(2,5,12,.82);backdrop-filter:blur(4px);z-index:50;
+  display:none;align-items:center;justify-content:center;padding:18px}
+.modal-bg.show{display:flex;animation:fadeIn .25s}
+.modal{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
+  border-radius:20px;padding:22px;max-width:420px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.modal h3{font-family:var(--titulo);font-size:20px;margin-bottom:8px}
+.modal p{font-size:14px;color:var(--txt-dim);line-height:1.55}
+.code-in{letter-spacing:10px;text-align:center;font-family:var(--mono);font-size:26px}
+.fake-code{margin-top:12px;text-align:center;font-size:13px;color:var(--amber);font-family:var(--mono);
+  background:rgba(255,174,57,.08);border:1px dashed rgba(255,174,57,.4);border-radius:10px;padding:10px}
+
+/* ===== Canvas overlays ===== */
+#fx{position:fixed;inset:0;pointer-events:none;z-index:40}
+#finale{position:fixed;inset:0;pointer-events:none;z-index:45;display:none}
+
+/* flash + shake */
+.flash{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0}
+.flash.green{background:radial-gradient(circle,rgba(57,255,158,.35),transparent 70%);animation:flash .5s}
+.flash.red{background:radial-gradient(circle,rgba(255,71,87,.4),transparent 70%);animation:flash .5s}
+@keyframes flash{0%{opacity:.9}100%{opacity:0}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(9px)}
+  60%{transform:translateX(-7px)}80%{transform:translateX(5px)}}
+.shake{animation:shake .4s}
+
+/* footer */
+.foot{margin-top:auto;padding:18px 4px 8px;text-align:center;font-size:11px;color:var(--txt-dim);line-height:1.6}
+.foot a{color:var(--cyan);text-decoration:none}
+.muted{color:var(--txt-dim);font-size:12px;text-align:center;margin-top:10px}
+.center{text-align:center}
+.row-links{display:flex;gap:14px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.row-links button{font-size:13px;color:var(--cyan);text-decoration:underline;text-underline-offset:3px}
+
+/* parabéns finale text */
+#gz{position:fixed;inset:0;z-index:46;display:none;align-items:center;justify-content:center;pointer-events:none}
+#gz .gztxt{font-family:var(--titulo);font-weight:800;font-size:clamp(40px,12vw,90px);
+  background:linear-gradient(90deg,var(--cyan),var(--gold),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 40px rgba(35,231,214,.4);animation:gzpop .8s cubic-bezier(.2,1.4,.4,1)}
+@keyframes gzpop{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+
+@media (max-width:480px){
+  #app{padding:10px}
+  .stats{gap:7px}
+  .stat .v{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="finale"></canvas>
+<div id="gz"><div class="gztxt">Parabéns!</div></div>
+<canvas id="fx"></canvas>
+<div class="flash" id="flash"></div>
+
+<div id="app">
+
+  <!-- ============ TELA: LOGIN / CADASTRO ============ -->
+  <section class="screen active" id="scr-login">
+    <div class="brand">
+      <svg class="pulse" viewBox="0 0 120 34" fill="none"><polyline id="ecgBrand"
+        points="0,17 25,17 32,17 38,4 46,30 54,17 70,17 76,10 82,24 90,17 120,17"
+        stroke="var(--cyan)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h1 style="text-align:center;font-family:var(--titulo);font-weight:800;letter-spacing:2px;
+      font-size:clamp(28px,8vw,44px);background:linear-gradient(90deg,var(--cyan),var(--magenta));
+      -webkit-background-clip:text;background-clip:text;color:transparent">TOXIN&nbsp;ARENA</h1>
+    <p class="subtitle">Quiz clínico de toxina botulínica · estética &amp; dermatologia</p>
+
+    <div class="card">
+      <label class="fld" for="in-email">Seu e-mail</label>
+      <input class="txt" id="in-email" type="email" inputmode="email" autocomplete="email" placeholder="voce@clinica.com" />
+      <label class="fld" for="in-name" id="lbl-name">Primeiro nome</label>
+      <input class="txt" id="in-name" type="text" autocomplete="given-name" placeholder="Ex.: Marina" />
+      <div class="err" id="login-err"></div>
+      <button class="btn" id="btn-enter">Entrar na Arena ▸</button>
+      <p class="hint">Na primeira vez enviamos um código por e-mail para validar seu acesso (uma única vez).
+        Depois, basta digitar o e-mail para entrar e continuar de onde parou.</p>
+    </div>
+
+    <div class="row-links">
+      <button id="lnk-ranking">🏆 Ver ranking</button>
+      <button id="lnk-reset">Limpar dados locais</button>
+    </div>
+
+    <footer class="foot" id="foot-login"></footer>
+  </section>
+
+  <!-- ============ TELA: MENU / MODOS ============ -->
+  <section class="screen" id="scr-menu">
+    <div class="brand"><h1>TOXIN ARENA</h1></div>
+    <p class="subtitle" id="menu-hello">Pronta para aplicar?</p>
+
+    <div class="card">
+      <div style="font-family:var(--titulo);font-weight:700;font-size:17px;margin-bottom:4px">Escolha o modo</div>
+      <div class="modes">
+        <button class="mode" data-mode="classico">
+          <div class="ico">🩺</div>
+          <div><div class="mt">Clássico</div><div class="md">3 vidas · timer 30s · questões embaralhadas</div></div>
+        </button>
+        <button class="mode" data-mode="sobrevivencia">
+          <div class="ico">🔥</div>
+          <div><div class="mt">Sobrevivência</div><div class="md">Sem limite de erros · ritmo acelerado</div></div>
+          <span class="badge">XP ×2</span>
+        </button>
+        <button class="mode" data-mode="treino">
+          <div class="ico">📚</div>
+          <div><div class="mt">Treino</div><div class="md">Sem timer, sem vidas · foco nas explicações</div></div>
+          <span class="badge">não pontua</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn ghost" id="btn-ranking2">🏆 Ranking</button>
+      <button class="btn ghost" id="btn-logout">Trocar conta</button>
+    </div>
+    <footer class="foot"></footer>
+  </section>
+
+  <!-- ============ TELA: JOGO ============ -->
+  <section class="screen" id="scr-game">
+    <div class="hud">
+      <div class="hud-top">
+        <div class="hud-left">
+          <span class="lvtag" id="lvtag">LV 1</span>
+          <span class="hearts" id="hearts"></span>
+        </div>
+        <div class="acc"><span id="acc-pct">0%</span><small>acertos</small></div>
+      </div>
+      <div class="xpwrap">
+        <div class="xpfill" id="xpfill"></div>
+        <svg class="ecg" id="ecgXp" viewBox="0 0 200 16" preserveAspectRatio="none"></svg>
+        <span class="xplabel" id="xplabel">0 XP</span>
+      </div>
+      <div class="hud-mid">
+        <span class="combo" id="combo">×1</span>
+        <div class="timerwrap"><div class="timerfill" id="timerfill"></div></div>
+        <span class="tnum" id="tnum">30</span>
+      </div>
+      <div class="track" id="track"></div>
+    </div>
+
+    <div class="card" style="flex:1">
+      <span class="qtag" id="qtag">Tema</span>
+      <div class="figure" id="figure"></div>
+      <div class="qtext" id="qtext"></div>
+      <div class="alts" id="alts"></div>
+      <div class="explain" id="explain">
+        <h4 id="explain-h"></h4>
+        <p id="explain-p"></p>
+        <button class="btn nextbtn" id="btn-next">Próxima ▸ <span class="mono" style="opacity:.6;font-size:12px">(Enter)</span></button>
+      </div>
+    </div>
+    <footer class="foot"></footer>
+  </section>
+
+  <!-- ============ TELA: RESULTADO ============ -->
+  <section class="screen" id="scr-result">
+    <div class="result-head">
+      <div class="medal" id="r-medal">🎖️</div>
+      <div class="tier" id="r-tier">Especialista</div>
+      <p class="subtitle" id="r-sub" style="margin-top:6px"></p>
+    </div>
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><div class="v" id="r-acertos">0</div><div class="l">Acertos</div></div>
+        <div class="stat"><div class="v" id="r-pct">0%</div><div class="l">Aproveit.</div></div>
+        <div class="stat"><div class="v" id="r-combo">×1</div><div class="l">Maior combo</div></div>
+        <div class="stat"><div class="v" id="r-xp">0</div><div class="l">XP total</div></div>
+        <div class="stat"><div class="v" id="r-lv">1</div><div class="l">Nível</div></div>
+        <div class="stat"><div class="v" id="r-tempo">0s</div><div class="l">Tempo</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn amber" id="btn-replay">↻ Refazer</button>
+        <button class="btn ghost" id="btn-menu">Menu</button>
+      </div>
+      <button class="btn magenta" id="btn-rank-from-result" style="margin-top:10px">🏆 Ver ranking</button>
+    </div>
+    <footer class="foot"></footer>
+  </section>
+
+  <!-- ============ TELA: RANKING ============ -->
+  <section class="screen" id="scr-rank">
+    <div class="brand"><h1 style="font-size:clamp(24px,7vw,36px)">RANKING</h1></div>
+    <p class="subtitle">Ordenado por acertos + XP · chave: e-mail</p>
+    <div class="card">
+      <div class="rank-list" id="rank-list"></div>
+    </div>
+    <button class="btn ghost" id="btn-back" style="margin-top:14px">‹ Voltar</button>
+    <footer class="foot"></footer>
+  </section>
+
+</div>
+
+<!-- ============ MODAL: VALIDAÇÃO DE CÓDIGO ============ -->
+<div class="modal-bg" id="modal-code">
+  <div class="modal">
+    <h3>Valide seu e-mail</h3>
+    <p>Enviamos um código de 6 dígitos para <b id="code-email"></b>. Digite-o abaixo para confiar neste e-mail (só uma vez).</p>
+    <input class="txt code-in" id="in-code" maxlength="6" inputmode="numeric" placeholder="––––––" style="margin-top:14px" />
+    <div class="fake-code" id="fake-code"></div>
+    <div class="err" id="code-err"></div>
+    <button class="btn" id="btn-validate" style="margin-top:6px">Validar ▸</button>
+    <button class="btn ghost small" id="btn-resend" style="width:100%;margin-top:8px">Reenviar código</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: CONTINUAR OU NOVA PARTIDA ============ -->
+<div class="modal-bg" id="modal-resume">
+  <div class="modal">
+    <h3>Bem-vindo de volta 👋</h3>
+    <p id="resume-txt">Você tem uma partida salva. O que deseja fazer?</p>
+    <button class="btn" id="btn-continue" style="margin-top:14px">▸ Continuar de onde parou</button>
+    <button class="btn ghost" id="btn-new" style="margin-top:10px">Começar nova partida</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 0 · CONFIGURAÇÃO DE INTEGRAÇÃO  ← PREENCHA AQUI
+   ────────────────────────────────────────────────────────────────────
+   • EMAILJS  → envia o CÓDIGO de validação para o e-mail DO JOGADOR.
+       1. Crie conta em https://www.emailjs.com (grátis).
+       2. Adicione um "Email Service" (Gmail, etc.) → copie o Service ID.
+       3. Crie um "Email Template" com o campo "To Email" = {{to_email}}
+          e no corpo use as variáveis {{to_name}} e {{code}}
+          (ex.: "Olá {{to_name}}, seu código é {{code}}") → copie o Template ID.
+       4. Account → API Keys → copie a Public Key.
+   • WEB3FORMS → encaminha cada CADASTRO para o SEU e-mail (lead).
+       Use a mesma access_key do site Global Peptídeos (web3forms.com).
+   Se algum campo ficar vazio, o sistema usa o fallback de modo-teste
+   (exibe o código na tela) e simplesmente não envia o lead.
+   Obs.: a Public Key do EmailJS é pública por design. A access_key do
+   Web3Forms ficará visível no HTML — ative restrição de domínio/hCaptcha
+   no painel do Web3Forms para evitar spam.
+   ════════════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  EMAILJS:  { serviceId:'', templateId:'', publicKey:'' },
+  WEB3FORMS:{ accessKey:'' },
+};
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 1 · DADOS — 20 questões de toxina botulínica
+   Fonte: consenso/literatura de toxina botulínica estética (ver rodapé)
+   correta = índice 0-based da alternativa correta (antes de embaralhar)
+   figura  = id da ilustração vetorial (ver SEÇÃO FIGURAS)
+   ════════════════════════════════════════════════════════════════════ */
+const QUESTOES = [
+ { id:1, tema:"Diluição", dificuldade:"facil", figura:"vial",
+   enunciado:"Um frasco de 100 U de onabotulinumtoxina A é reconstituído com 2,5 mL de soro fisiológico 0,9%. Qual a concentração resultante?",
+   alternativas:["1 U por 0,1 mL","2 U por 0,1 mL","4 U por 0,1 mL","10 U por 0,1 mL"],
+   correta:2,
+   explicacao:"100 U ÷ 2,5 mL = 40 U/mL, ou seja, 4 U a cada 0,1 mL. Essa é a diluição mais usada na estética por equilibrar precisão de dose com um volume injetável confortável." },
+
+ { id:2, tema:"Diluição", dificuldade:"media", figura:"vial",
+   enunciado:"Você deseja obter uma concentração de 2 U por 0,1 mL a partir de um frasco de 100 U. Qual o volume de soro fisiológico necessário?",
+   alternativas:["1 mL","2,5 mL","4 mL","5 mL"],
+   correta:3,
+   explicacao:"2 U/0,1 mL equivalem a 20 U/mL. Logo, 100 U ÷ 20 U/mL = 5 mL de diluente. Maior volume de diluição gera concentração menor e maior difusão — útil em áreas que pedem espalhamento controlado." },
+
+ { id:3, tema:"Diluição", dificuldade:"media", figura:"vial",
+   enunciado:"Após a reconstituição, qual a orientação clássica de bula para o uso do produto?",
+   alternativas:["Utilizar idealmente em até 24h, mantendo sob refrigeração a 2–8 °C","Manter 7 dias em temperatura ambiente","Congelar e usar em até 30 dias","Usar somente nos primeiros 10 minutos e descartar"],
+   correta:0,
+   explicacao:"A recomendação tradicional de bula é usar o produto reconstituído em até 24 horas, conservado a 2–8 °C. A toxina é uma proteína termolábil; manuseio e armazenamento inadequados reduzem sua atividade." },
+
+ { id:4, tema:"Diluição", dificuldade:"facil", figura:"vial",
+   enunciado:"Qual é o diluente correto e a técnica adequada para reconstituir a toxina botulínica?",
+   alternativas:["Água destilada, agitando vigorosamente","Soro fisiológico 0,9% estéril, injetado suavemente sem agitação intensa","Álcool 70%, em movimentos rápidos","Glicose 5%, sob aquecimento"],
+   correta:1,
+   explicacao:"O diluente padrão é soro fisiológico 0,9% (preferencialmente sem conservante). A solução deve ser introduzida de forma suave: agitação vigorosa cria bolhas/cisalhamento que podem desnaturar a proteína e reduzir a eficácia." },
+
+ { id:5, tema:"Dosagem", dificuldade:"media", figura:"dose",
+   enunciado:"Ao converter onabotulinumtoxina A (Botox®) para abobotulinumtoxina A (Dysport®), qual a relação de unidades mais aceita?",
+   alternativas:["1 : 1","Aproximadamente 1 : 2,5","2,5 : 1","1 : 10"],
+   correta:1,
+   explicacao:"As unidades NÃO são intercambiáveis entre marcas. Para abobotA, a relação prática mais citada é ~1:2,5 (faixa de 1:2 a 1:3) em relação à onabotA. Ignorar isso leva a sub ou superdosagem grave." },
+
+ { id:6, tema:"Dosagem", dificuldade:"media", figura:"dose",
+   enunciado:"Qual a relação de conversão de unidades geralmente aceita entre onabotulinumtoxina A e incobotulinumtoxina A (Xeomin®)?",
+   alternativas:["Aproximadamente 1 : 1","1 : 2,5","1 : 4","2 : 1"],
+   correta:0,
+   explicacao:"OnabotA e incobotA têm relação de unidades aproximadamente 1:1. A incobotA é a formulação 'pura' (sem proteínas complexantes). Já abobotA e prabotA exigem fatores de conversão diferentes — nunca assuma 1:1 para todas." },
+
+ { id:7, tema:"Pontos", dificuldade:"facil", figura:"face",
+   enunciado:"Na técnica clássica de tratamento da glabela (linhas de expressão entre as sobrancelhas), quantos pontos de aplicação são habitualmente usados?",
+   alternativas:["3 pontos","5 pontos","8 pontos","12 pontos"],
+   correta:1,
+   explicacao:"O esquema clássico da glabela usa 5 pontos: 1 no prócero (central) e 2 em cada corrugador do supercílio. É o padrão validado em estudos para rugas glabelares moderadas a intensas." },
+
+ { id:8, tema:"Pontos", dificuldade:"media", figura:"face",
+   enunciado:"Para reduzir o risco de ptose palpebral ao tratar a região frontal/glabelar, qual cuidado anatômico é recomendado?",
+   alternativas:["Injetar o mais próximo possível do rebordo orbital","Aplicar pelo menos ~1 cm acima do rebordo orbital ósseo","Injetar profundamente até o periósteo da órbita","Aumentar a dose por ponto perto da pálpebra"],
+   correta:1,
+   explicacao:"Manter os pontos pelo menos ~1 cm acima do rebordo orbital reduz a difusão da toxina para o músculo elevador da pálpebra superior, principal causa de ptose palpebral iatrogênica." },
+
+ { id:9, tema:"Anatomia", dificuldade:"facil", figura:"muscle",
+   enunciado:"Qual músculo é o principal responsável pelas rugas horizontais da testa?",
+   alternativas:["Músculo frontal","Músculo prócero","Músculo masseter","Orbicular do olho"],
+   correta:0,
+   explicacao:"O músculo frontal é o único elevador da testa; sua contração repetida gera as linhas horizontais. Por ser elevador da sobrancelha, deve ser tratado com cautela para não causar ptose de sobrancelha." },
+
+ { id:10, tema:"Anatomia", dificuldade:"media", figura:"muscle",
+   enunciado:"As rugas conhecidas como 'pés de galinha' (linhas periorbitais laterais) são geradas principalmente por qual músculo?",
+   alternativas:["Corrugador do supercílio","Porção orbital do orbicular do olho","Músculo zigomático maior","Músculo frontal"],
+   correta:1,
+   explicacao:"Os 'pés de galinha' resultam da contração da porção orbital do orbicular do olho, músculo esfincteriano que circunda a órbita. A aplicação é superficial (intradérmica) e lateral à órbita." },
+
+ { id:11, tema:"Anatomia", dificuldade:"media", figura:"muscle",
+   enunciado:"As linhas glabelares verticais (o clássico '11' entre as sobrancelhas) são produzidas principalmente por qual músculo?",
+   alternativas:["Músculo frontal","Corrugador do supercílio","Músculo nasal","Depressor do ângulo da boca"],
+   correta:1,
+   explicacao:"O corrugador do supercílio aproxima medialmente as sobrancelhas, criando as linhas verticais glabelares. O prócero complementa, gerando a linha horizontal na raiz nasal." },
+
+ { id:12, tema:"Fisiologia", dificuldade:"facil", figura:"nmj",
+   enunciado:"Qual é o mecanismo de ação da toxina botulínica tipo A na junção neuromuscular?",
+   alternativas:["Bloqueia os receptores de acetilcolina na membrana pós-sináptica","Cliva a proteína SNAP-25, impedindo a liberação de acetilcolina","Inibe a enzima acetilcolinesterase","Bloqueia os canais de sódio do axônio"],
+   correta:1,
+   explicacao:"A toxina tipo A cliva a SNAP-25, proteína do complexo SNARE necessária para a fusão das vesículas e liberação de acetilcolina. Sem liberação de ACh, não há contração muscular — daí o relaxamento." },
+
+ { id:13, tema:"Anatomia", dificuldade:"dificil", figura:"muscle",
+   enunciado:"Para promover uma discreta elevação da cauda da sobrancelha (efeito 'brow lift' químico), qual estrutura deve ser relaxada?",
+   alternativas:["Porção lateral/orbital do orbicular do olho","Todo o ventre do músculo frontal","Corrugador do supercílio apenas","Músculo prócero"],
+   correta:0,
+   explicacao:"A porção lateral do orbicular do olho atua como depressora da cauda da sobrancelha. Ao relaxá-la, o frontal (elevador) prevalece nessa região e a cauda sobe levemente — base do 'brow lift' com toxina." },
+
+ { id:14, tema:"Farmacologia", dificuldade:"facil", figura:"timeline",
+   enunciado:"Em quanto tempo, em média, começam a surgir os primeiros efeitos clínicos da toxina botulínica?",
+   alternativas:["Em poucos minutos","Em 2 a 3 dias (com pico por volta de 14 dias)","Somente após 6 semanas","Apenas após 3 meses"],
+   correta:1,
+   explicacao:"O início costuma ser percebido em 2–3 dias, com efeito máximo por volta de 1–2 semanas. Por isso, qualquer retoque (ajuste) deve ser avaliado somente após ~14 dias, não antes." },
+
+ { id:15, tema:"Farmacologia", dificuldade:"media", figura:"timeline",
+   enunciado:"Qual é a duração média do efeito estético da toxina botulínica tipo A?",
+   alternativas:["2 a 3 semanas","3 a 4 meses","12 meses","É permanente"],
+   correta:1,
+   explicacao:"O efeito dura em média 3 a 4 meses na maioria dos pacientes, variando conforme dose, músculo, metabolismo e atividade muscular. A função retorna gradualmente com a regeneração da placa motora." },
+
+ { id:16, tema:"Complicações", dificuldade:"dificil", figura:"alert",
+   enunciado:"Um paciente desenvolve ptose palpebral (queda da pálpebra superior) após aplicação na glabela. Qual conduta farmacológica pode amenizar o quadro?",
+   alternativas:["Colírio de apraclonidina 0,5% (alfa-adrenérgico)","Reaplicar toxina na pálpebra afetada","Antibiótico oral por 7 dias","Nenhuma medida ajuda; é irreversível"],
+   correta:0,
+   explicacao:"O colírio alfa-adrenérgico (apraclonidina 0,5%, ou fenilefrina) estimula o músculo de Müller, elevando a pálpebra 1–2 mm e amenizando a ptose enquanto o efeito da toxina regride. O quadro é temporário." },
+
+ { id:17, tema:"Contraindicações", dificuldade:"facil", figura:"alert",
+   enunciado:"Qual das situações abaixo é considerada uma contraindicação ao uso estético de toxina botulínica?",
+   alternativas:["Hipertensão arterial controlada","Gestação e lactação","Pele oleosa","Idade acima de 60 anos"],
+   correta:1,
+   explicacao:"Gestação e lactação são contraindicações (categoria de risco / ausência de estudos de segurança). Hipertensão controlada, pele oleosa e idade avançada não contraindicam o procedimento por si só." },
+
+ { id:18, tema:"Contraindicações", dificuldade:"dificil", figura:"alert",
+   enunciado:"Qual combinação representa o MAIOR risco de potencializar o bloqueio neuromuscular da toxina botulínica?",
+   alternativas:["Paciente hígido em uso de paracetamol","Miastenia gravis (ou síndrome de Eaton-Lambert) e uso de aminoglicosídeos","Uso isolado de protetor solar","Dieta rica em proteínas"],
+   correta:1,
+   explicacao:"Doenças neuromusculares como miastenia gravis e Eaton-Lambert já comprometem a transmissão neuromuscular. Antibióticos aminoglicosídeos (ex.: gentamicina) potencializam o bloqueio — a soma aumenta muito o risco de efeitos exagerados/sistêmicos." },
+
+ { id:19, tema:"Complicações", dificuldade:"dificil", figura:"face",
+   enunciado:"Após tratar a testa, a paciente apresenta elevação excessiva da cauda das sobrancelhas (aspecto 'mefisto' / 'sobrancelha de Spock'). Qual a conduta corretiva?",
+   alternativas:["Aplicar pequena dose de toxina nas fibras laterais do frontal, acima da cauda da sobrancelha","Aplicar dose alta no corrugador bilateralmente","Massagear vigorosamente a glabela","Aguardar 6 meses sem intervir"],
+   correta:0,
+   explicacao:"O aspecto 'mefisto' ocorre quando o centro do frontal é relaxado e as fibras laterais permanecem ativas, elevando demais a cauda. A correção é uma pequena dose nas fibras laterais do frontal, acima da cauda da sobrancelha, equilibrando o conjunto." },
+
+ { id:20, tema:"Farmacologia", dificuldade:"dificil", figura:"nmj",
+   enunciado:"Por que o efeito da toxina botulínica é reversível ao longo do tempo?",
+   alternativas:["Porque a toxina é eliminada intacta na urina em 24h","Porque ocorre brotamento axonal e nova síntese de SNAP-25, restaurando a transmissão","Porque o corpo produz um antídoto específico","Porque a toxina nunca se liga de fato ao neurônio"],
+   correta:1,
+   explicacao:"Embora a clivagem da SNAP-25 seja duradoura, o terminal nervoso forma novos brotamentos axonais e sintetiza nova SNAP-25 funcional. Com o tempo, a junção neuromuscular original é reativada e a função muscular retorna — por isso o efeito é temporário (~3–4 meses)." },
+];
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO FIGURAS — ilustrações vetoriais (SVG inline, sem assets remotos)
+   Cada função retorna um <svg> coerente com o tema da questão.
+   ════════════════════════════════════════════════════════════════════ */
+const FIGURAS = {
+  // Rosto com pontos de aplicação numerados (glabela / frontal / periorbital)
+  face(){return `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="sk" cx="50%" cy="40%"><stop offset="0%" stop-color="#13283f"/><stop offset="100%" stop-color="#0a1626"/></radialGradient></defs>
+    <path d="M110 12 C150 12 172 44 172 92 C172 140 148 186 110 186 C72 186 48 140 48 92 C48 44 70 12 110 12 Z" fill="url(#sk)" stroke="#23e7d6" stroke-width="1.6"/>
+    <!-- sobrancelhas -->
+    <path d="M70 78 q22 -12 40 -2" fill="none" stroke="#5e7da3" stroke-width="3" stroke-linecap="round"/>
+    <path d="M110 76 q20 -10 40 2" fill="none" stroke="#5e7da3" stroke-width="3" stroke-linecap="round"/>
+    <!-- olhos -->
+    <ellipse cx="86" cy="96" rx="12" ry="6" fill="none" stroke="#5e7da3" stroke-width="1.6"/>
+    <ellipse cx="134" cy="96" rx="12" ry="6" fill="none" stroke="#5e7da3" stroke-width="1.6"/>
+    <circle cx="86" cy="96" r="3" fill="#23e7d6"/><circle cx="134" cy="96" r="3" fill="#23e7d6"/>
+    <!-- nariz / boca -->
+    <path d="M110 100 l-5 26 q5 5 10 0" fill="none" stroke="#3c5a7d" stroke-width="1.6"/>
+    <path d="M92 150 q18 12 36 0" fill="none" stroke="#5e7da3" stroke-width="2.4" stroke-linecap="round"/>
+    <!-- linhas frontais -->
+    <path d="M74 50 q36 -8 72 0 M72 60 q38 -8 76 0" fill="none" stroke="#ff3d8b" stroke-width="1.2" opacity=".55"/>
+    <!-- pontos numerados -->
+    ${pt(110,66,'1')}${pt(96,72,'2')}${pt(124,72,'3')}${pt(84,68,'4')}${pt(136,68,'5')}
+    ${pt(60,96,'',true)}${pt(160,96,'',true)}
+  </svg>`;},
+
+  // Diagrama muscular da face
+  muscle(){return `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <path d="M110 12 C150 12 172 44 172 92 C172 140 148 186 110 186 C72 186 48 140 48 92 C48 44 70 12 110 12 Z" fill="#0a1626" stroke="#1c3556" stroke-width="1.4"/>
+    <!-- frontal -->
+    <path d="M72 30 q38 -14 76 0 l0 34 q-38 -10 -76 0 Z" fill="rgba(35,231,214,.16)" stroke="#23e7d6" stroke-width="1.2"/>
+    <text x="110" y="48" fill="#7af5ea" font-size="9" text-anchor="middle" font-family="monospace">FRONTAL</text>
+    <!-- corrugadores -->
+    <path d="M92 70 q14 -6 14 4 q-8 -2 -14 2 Z" fill="rgba(255,61,139,.25)" stroke="#ff3d8b" stroke-width="1"/>
+    <path d="M128 70 q-14 -6 -14 4 q8 -2 14 2 Z" fill="rgba(255,61,139,.25)" stroke="#ff3d8b" stroke-width="1"/>
+    <!-- prócero -->
+    <path d="M104 74 h12 l-3 18 h-6 Z" fill="rgba(255,174,57,.25)" stroke="#ffae39" stroke-width="1"/>
+    <!-- orbicular dos olhos -->
+    <ellipse cx="84" cy="100" rx="18" ry="13" fill="none" stroke="#39ff9e" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <ellipse cx="136" cy="100" rx="18" ry="13" fill="none" stroke="#39ff9e" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <text x="110" y="150" fill="#9fd" font-size="8" text-anchor="middle" font-family="monospace">orbicular do olho</text>
+    <text x="110" y="84" fill="#ffae39" font-size="7" text-anchor="middle" font-family="monospace">prócero</text>
+    <text x="78" y="66" fill="#ff7db0" font-size="7" text-anchor="middle" font-family="monospace">corrugador</text>
+  </svg>`;},
+
+  // Frasco + seringa (diluição)
+  vial(){return `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- frasco -->
+    <rect x="40" y="60" width="48" height="86" rx="8" fill="#0a1626" stroke="#23e7d6" stroke-width="1.6"/>
+    <rect x="48" y="100" width="32" height="40" rx="4" fill="rgba(35,231,214,.22)"/>
+    <rect x="46" y="48" width="36" height="16" rx="4" fill="#1c3556" stroke="#23e7d6" stroke-width="1.2"/>
+    <rect x="52" y="40" width="24" height="10" rx="3" fill="#5e7da3"/>
+    <text x="64" y="126" fill="#7af5ea" font-size="11" text-anchor="middle" font-family="monospace" font-weight="bold">100 U</text>
+    <text x="64" y="160" fill="#8aa6c8" font-size="8" text-anchor="middle" font-family="monospace">+ SF 0,9%</text>
+    <!-- seringa -->
+    <g transform="translate(108 70) rotate(18)">
+      <rect x="0" y="0" width="78" height="20" rx="4" fill="#0a1626" stroke="#ff3d8b" stroke-width="1.4"/>
+      <rect x="2" y="3" width="44" height="14" rx="2" fill="rgba(255,61,139,.25)"/>
+      <line x1="0" y1="10" x2="78" y2="10" stroke="#ff3d8b" stroke-width=".5" opacity=".5"/>
+      <rect x="78" y="6" width="10" height="8" fill="#5e7da3"/>
+      <line x1="88" y1="10" x2="118" y2="10" stroke="#5e7da3" stroke-width="2"/>
+      <rect x="-14" y="2" width="14" height="16" rx="2" fill="#5e7da3"/>
+    </g>
+    <text x="150" y="120" fill="#ff7db0" font-size="9" text-anchor="middle" font-family="monospace">U / mL ?</text>
+  </svg>`;},
+
+  // Dose por marca / balança de conversão
+  dose(){return `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <line x1="110" y1="30" x2="110" y2="150" stroke="#1c3556" stroke-width="3"/>
+    <rect x="98" y="150" width="24" height="14" rx="3" fill="#1c3556"/>
+    <line x1="40" y1="60" x2="180" y2="60" stroke="#5e7da3" stroke-width="2"/>
+    <!-- prato esquerdo -->
+    <line x1="40" y1="60" x2="40" y2="92" stroke="#5e7da3" stroke-width="1.2"/>
+    <path d="M18 92 h44 l-8 16 h-28 Z" fill="rgba(35,231,214,.18)" stroke="#23e7d6" stroke-width="1.4"/>
+    <text x="40" y="104" fill="#7af5ea" font-size="11" text-anchor="middle" font-family="monospace" font-weight="bold">1 U</text>
+    <text x="40" y="128" fill="#8aa6c8" font-size="8" text-anchor="middle" font-family="monospace">ona / inco</text>
+    <!-- prato direito -->
+    <line x1="180" y1="60" x2="180" y2="92" stroke="#5e7da3" stroke-width="1.2"/>
+    <path d="M158 92 h44 l-8 16 h-28 Z" fill="rgba(255,61,139,.18)" stroke="#ff3d8b" stroke-width="1.4"/>
+    <text x="180" y="104" fill="#ff7db0" font-size="11" text-anchor="middle" font-family="monospace" font-weight="bold">?? U</text>
+    <text x="180" y="128" fill="#8aa6c8" font-size="8" text-anchor="middle" font-family="monospace">abo / outras</text>
+    <text x="110" y="24" fill="#ffae39" font-size="10" text-anchor="middle" font-family="monospace">conversão ≠ 1:1</text>
+  </svg>`;},
+
+  // Junção neuromuscular (vesícula ACh, SNAP-25, toxina)
+  nmj(){return `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- terminal axonal -->
+    <path d="M20 30 q60 10 80 50 q12 24 6 50 q-40 6 -70 -6 Z" fill="#0a1626" stroke="#23e7d6" stroke-width="1.4"/>
+    <text x="50" y="48" fill="#7af5ea" font-size="8" font-family="monospace">terminal axonal</text>
+    <!-- vesículas ACh -->
+    <circle cx="60" cy="80" r="9" fill="rgba(35,231,214,.25)" stroke="#23e7d6"/>
+    <circle cx="86" cy="96" r="9" fill="rgba(35,231,214,.25)" stroke="#23e7d6"/>
+    <circle cx="64" cy="108" r="8" fill="rgba(35,231,214,.25)" stroke="#23e7d6"/>
+    <text x="70" y="83" fill="#7af5ea" font-size="6" text-anchor="middle" font-family="monospace">ACh</text>
+    <!-- SNAP-25 + tesoura da toxina -->
+    <line x1="100" y1="120" x2="150" y2="120" stroke="#39ff9e" stroke-width="3"/>
+    <text x="125" y="114" fill="#39ff9e" font-size="8" text-anchor="middle" font-family="monospace">SNAP-25</text>
+    <g transform="translate(120 120)">
+      <circle cx="0" cy="-6" r="4" fill="none" stroke="#ff3d8b" stroke-width="2"/>
+      <circle cx="0" cy="6" r="4" fill="none" stroke="#ff3d8b" stroke-width="2"/>
+      <line x1="3" y1="-5" x2="16" y2="0" stroke="#ff3d8b" stroke-width="2"/>
+      <line x1="3" y1="5" x2="16" y2="0" stroke="#ff3d8b" stroke-width="2"/>
+    </g>
+    <text x="150" y="150" fill="#ff7db0" font-size="8" text-anchor="middle" font-family="monospace">toxina cliva ✂</text>
+    <!-- membrana muscular -->
+    <rect x="40" y="150" width="160" height="20" rx="4" fill="rgba(94,125,163,.2)" stroke="#5e7da3"/>
+    <text x="120" y="164" fill="#8aa6c8" font-size="8" text-anchor="middle" font-family="monospace">músculo</text>
+  </svg>`;},
+
+  // Eixo do tempo farmacológico
+  timeline(){return `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <line x1="24" y1="150" x2="196" y2="150" stroke="#5e7da3" stroke-width="2"/>
+    <polygon points="196,150 188,146 188,154" fill="#5e7da3"/>
+    <!-- curva efeito -->
+    <path d="M30 150 Q60 150 80 90 T130 70 Q170 78 190 150" fill="none" stroke="#23e7d6" stroke-width="2.2"/>
+    <!-- marcos -->
+    <circle cx="60" cy="135" r="4" fill="#39ff9e"/><text x="60" y="172" fill="#39ff9e" font-size="8" text-anchor="middle" font-family="monospace">2–3d</text>
+    <text x="60" y="125" fill="#39ff9e" font-size="7" text-anchor="middle" font-family="monospace">início</text>
+    <circle cx="108" cy="68" r="4" fill="#ffae39"/><text x="108" y="58" fill="#ffae39" font-size="8" text-anchor="middle" font-family="monospace">pico ~14d</text>
+    <circle cx="190" cy="150" r="4" fill="#ff3d8b"/><text x="178" y="172" fill="#ff7db0" font-size="8" text-anchor="middle" font-family="monospace">3–4 m</text>
+    <text x="20" y="40" fill="#7af5ea" font-size="9" font-family="monospace">efeito clínico</text>
+  </svg>`;},
+
+  // Ícone de alerta (complicações / contraindicações)
+  alert(){return `<svg viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+    <path d="M110 26 L196 168 H24 Z" fill="rgba(255,61,139,.1)" stroke="#ff3d8b" stroke-width="2.4" stroke-linejoin="round"/>
+    <rect x="103" y="74" width="14" height="50" rx="6" fill="#ff3d8b"/>
+    <circle cx="110" cy="142" r="8" fill="#ff3d8b"/>
+    <text x="110" y="190" fill="#ff7db0" font-size="10" text-anchor="middle" font-family="monospace">segurança / manejo</text>
+  </svg>`;},
+};
+// helper de ponto numerado no rosto
+function pt(x,y,n,green){
+  const c = green?'#39ff9e':'#ffae39';
+  return `<circle cx="${x}" cy="${y}" r="7" fill="${c}" opacity=".9"/>`+
+         (n?`<text x="${x}" y="${y+3}" fill="#04141a" font-size="9" text-anchor="middle" font-family="monospace" font-weight="bold">${n}</text>`:'');
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 2 · ESTADO
+   ════════════════════════════════════════════════════════════════════ */
+const LS = {
+  players:'toxin_players',          // { email: {name, verified} }
+  progress:e=>'toxin_progress_'+e,  // partida salva por e-mail
+  ranking:'toxin_ranking',          // [{email,name,acertos,pct,xp,lv,combo}]
+};
+let player = null;          // {email,name}
+let game = null;            // estado da partida atual
+let pendingCode = null;     // {email,name,code}
+const $ = s=>document.querySelector(s);
+const $$ = s=>document.querySelectorAll(s);
+
+function loadPlayers(){try{return JSON.parse(localStorage.getItem(LS.players))||{}}catch(e){return {}}}
+function savePlayers(p){localStorage.setItem(LS.players,JSON.stringify(p))}
+function loadRanking(){try{return JSON.parse(localStorage.getItem(LS.ranking))||[]}catch(e){return []}}
+function saveRanking(r){localStorage.setItem(LS.ranking,JSON.stringify(r))}
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 3 · ÁUDIO — Web Audio API, sons gerados em tempo real
+   ════════════════════════════════════════════════════════════════════ */
+let actx=null;
+function AC(){ if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}
+  if(actx&&actx.state==='suspended')actx.resume(); return actx; }
+function tone(freq,dur,type='sine',vol=.18,delay=0){
+  const c=AC(); if(!c)return;
+  const t=c.currentTime+delay, o=c.createOscillator(), g=c.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.012);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(c.destination); o.start(t); o.stop(t+dur+.02);
+}
+const sndCorrect=combo=>{ // sobe de tom conforme combo
+  const base=440+Math.min(combo,8)*70;
+  tone(base,.14,'triangle',.2,0); tone(base*1.25,.16,'triangle',.16,.07); tone(base*1.5,.2,'sine',.14,.14);
+};
+const sndWrong=()=>{ tone(180,.3,'sawtooth',.2,0); tone(120,.4,'sawtooth',.16,.06); };
+const sndTick=()=>tone(1500,.05,'square',.08,0);
+const sndLevel=()=>{[523,659,784,1046].forEach((f,i)=>tone(f,.18,'triangle',.16,i*.08));};
+const sndFanfare=()=>{[523,659,784,1046,1318].forEach((f,i)=>tone(f,.3,'triangle',.18,i*.12));
+  tone(784,.6,'sine',.12,.6);};
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 4 · CADASTRO / LOGIN
+   ════════════════════════════════════════════════════════════════════ */
+function showScreen(id){ $$('.screen').forEach(s=>s.classList.remove('active')); $('#'+id).classList.add('active'); window.scrollTo(0,0); }
+const validEmail = e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+$('#btn-enter').addEventListener('click',()=>{
+  const email=$('#in-email').value.trim().toLowerCase();
+  const name=$('#in-name').value.trim();
+  const err=$('#login-err'); err.textContent='';
+  if(!validEmail(email)){err.textContent='Digite um e-mail válido.';return;}
+  AC(); // destrava áudio no primeiro gesto
+  const players=loadPlayers();
+  if(players[email] && players[email].verified){
+    // e-mail já validado → login direto
+    player={email,name:players[email].name||name||'Colega'};
+    offerResumeOrNew();
+  }else{
+    if(!name){err.textContent='Informe seu primeiro nome para o cadastro.';return;}
+    // primeira vez → enviar código de validação (uma única vez)
+    enviarCodigo(email,name);
+  }
+});
+
+/* PONTO DE INTEGRAÇÃO DE E-MAIL (isolado) ───────────────────────────────
+   Em produção, troque o corpo desta função por uma chamada ao seu backend
+   / serviço (Web3Forms, EmailJS, função serverless na Vercel) que envie o
+   código real ao e-mail. Aqui geramos o código localmente e o exibimos como
+   fallback de teste.
+   Ex.: await fetch('/api/send-code',{method:'POST',body:JSON.stringify({email,code})})
+   ──────────────────────────────────────────────────────────────────────── */
+async function enviarCodigo(email,name){
+  const code=String(Math.floor(100000+Math.random()*900000));
+  pendingCode={email,name,code};
+  $('#code-email').textContent=email;
+  $('#in-code').value=''; $('#code-err').textContent='';
+  $('#modal-code').classList.add('show');
+  const fc=$('#fake-code');
+  const ej=CONFIG.EMAILJS;
+  if(ej.serviceId && ej.templateId && ej.publicKey){
+    fc.style.color='var(--txt-dim)';
+    fc.textContent='Enviando código para o seu e-mail…';
+    try{
+      const res=await fetch('https://api.emailjs.com/api/v1.0/email/send',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          service_id:ej.serviceId, template_id:ej.templateId, user_id:ej.publicKey,
+          template_params:{ to_email:email, to_name:name, code:code, passcode:code }
+        })
+      });
+      if(!res.ok) throw new Error('status '+res.status);
+      fc.style.color='var(--green)';
+      fc.textContent='✓ Código enviado para '+email+'. Verifique também a caixa de spam.';
+    }catch(err){
+      console.warn('[emailjs] falha ao enviar código',err);
+      fc.style.color='var(--amber)';
+      fc.textContent='⚠ Não foi possível enviar o e-mail agora — código (modo teste): '+code;
+    }
+  }else{
+    // fallback de teste: exibe o código localmente
+    fc.style.color='var(--amber)';
+    fc.textContent='🔧 Modo teste — seu código é: '+code;
+  }
+  $('#in-code').focus();
+}
+
+/* PONTO DE INTEGRAÇÃO WEB3FORMS — encaminha o cadastro/resultado ao seu e-mail.
+   Não bloqueia o fluxo do jogo (falha silenciosa, só loga no console). */
+async function encaminharLead(extra){
+  const ak=CONFIG.WEB3FORMS.accessKey;
+  if(!ak || !player) return;
+  try{
+    await fetch('https://api.web3forms.com/submit',{
+      method:'POST', headers:{'Content-Type':'application/json',Accept:'application/json'},
+      body:JSON.stringify(Object.assign({
+        access_key:ak,
+        from_name:'Toxin Arena — Quiz',
+        subject:'Toxin Arena — '+(extra&&extra._tipo==='resultado'?'resultado de partida':'novo cadastro')+' — '+player.name,
+        Nome:player.name, 'E-mail':player.email,
+      }, sanitizeLead(extra)))
+    });
+  }catch(e){ console.warn('[web3forms] envio de lead falhou',e); }
+}
+function sanitizeLead(o){ const r={}; for(const k in (o||{})) if(k[0]!=='_') r[k]=o[k]; return r; }
+$('#btn-resend').addEventListener('click',()=>{ if(pendingCode) enviarCodigo(pendingCode.email,pendingCode.name); });
+$('#btn-validate').addEventListener('click',()=>{
+  const v=$('#in-code').value.trim();
+  if(!pendingCode)return;
+  if(v!==pendingCode.code){$('#code-err').textContent='Código incorreto. Confira e tente novamente.';return;}
+  const players=loadPlayers();
+  players[pendingCode.email]={name:pendingCode.name,verified:true};
+  savePlayers(players);
+  player={email:pendingCode.email,name:pendingCode.name};
+  pendingCode=null;
+  $('#modal-code').classList.remove('show');
+  encaminharLead({Evento:'Cadastro validado no quiz', 'Validado em':new Date().toLocaleString('pt-BR')});
+  goMenu();
+});
+
+function offerResumeOrNew(){
+  const saved=localStorage.getItem(LS.progress(player.email));
+  if(saved){
+    try{ const g=JSON.parse(saved);
+      $('#resume-txt').textContent=`Modo ${rotuloModo(g.mode)} · questão ${g.index+1}/${g.order.length} · ${g.acertos} acertos. O que deseja fazer?`;
+      $('#modal-resume').classList.add('show'); return;
+    }catch(e){}
+  }
+  goMenu();
+}
+$('#btn-continue').addEventListener('click',()=>{ $('#modal-resume').classList.remove('show'); resumeGame(); });
+$('#btn-new').addEventListener('click',()=>{ $('#modal-resume').classList.remove('show'); localStorage.removeItem(LS.progress(player.email)); goMenu(); });
+
+function goMenu(){
+  $('#menu-hello').textContent = `Olá, ${player.name}! Pronta para aplicar?`;
+  showScreen('scr-menu');
+}
+$('#btn-logout').addEventListener('click',()=>{ player=null; showScreen('scr-login'); });
+$('#lnk-reset').addEventListener('click',()=>{
+  if(confirm('Isto apagará jogadores, progresso e ranking salvos neste navegador. Continuar?')){
+    localStorage.removeItem(LS.players); localStorage.removeItem(LS.ranking);
+    Object.keys(localStorage).filter(k=>k.startsWith('toxin_progress_')).forEach(k=>localStorage.removeItem(k));
+    alert('Dados locais limpos.');
+  }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 5 · CONFIGURAÇÃO DE PARTIDA / MODOS
+   ════════════════════════════════════════════════════════════════════ */
+const MODOS = {
+  classico:    {label:'Clássico',     vidas:3,  timer:30, mult:1,   pontua:true},
+  sobrevivencia:{label:'Sobrevivência',vidas:Infinity,timer:22,mult:2,pontua:true},
+  treino:      {label:'Treino',       vidas:Infinity,timer:0, mult:1, pontua:false},
+};
+const rotuloModo=m=>(MODOS[m]||{}).label||m;
+
+$$('.mode').forEach(b=>b.addEventListener('click',()=>{ AC(); startGame(b.dataset.mode); }));
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function startGame(mode){
+  const cfg=MODOS[mode];
+  // embaralha questões e prepara ordem de alternativas por questão
+  const order=shuffle(QUESTOES.map((q,i)=>i));
+  const altOrder={}; order.forEach(qi=>{ altOrder[qi]=shuffle([0,1,2,3]); });
+  game={
+    mode, cfg, order, altOrder, index:0,
+    xp:0, level:1, combo:0, maxCombo:0,
+    vidas:cfg.vidas, acertos:0, respondidas:0,
+    answered:false, startTime:Date.now(), tInt:null, tLeft:cfg.timer, lastTick:0,
+  };
+  showScreen('scr-game');
+  renderHUD(); renderQuestion();
+}
+function resumeGame(){
+  try{ game=JSON.parse(localStorage.getItem(LS.progress(player.email)));
+    game.cfg=MODOS[game.mode]; game.answered=false; game.tLeft=game.cfg.timer; game.tInt=null;
+    game.startTime=Date.now()-(game.elapsed||0);
+    showScreen('scr-game'); renderHUD(); renderQuestion();
+  }catch(e){ goMenu(); }
+}
+function persistProgress(){
+  if(!game||!player) return;
+  if(game.mode==='treino') return; // treino não salva ranking, mas pode salvar progresso? optamos por salvar só pontuáveis
+  const snap={...game}; delete snap.cfg; delete snap.tInt;
+  snap.elapsed=Date.now()-game.startTime;
+  localStorage.setItem(LS.progress(player.email),JSON.stringify(snap));
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 6 · RENDER (HUD + questão)
+   ════════════════════════════════════════════════════════════════════ */
+function xpToNext(lv){return lv*120;}
+function renderHUD(){
+  $('#lvtag').textContent='LV '+game.level;
+  // corações
+  const hearts=$('#hearts');
+  if(game.cfg.vidas===Infinity){ hearts.innerHTML='<span style="font-size:13px;color:var(--txt-dim);font-family:var(--mono)">∞</span>'; }
+  else{ let h=''; for(let i=0;i<3;i++) h+=`<span class="heart ${i<game.vidas?'':'lost'}">❤️</span>`; hearts.innerHTML=h; }
+  // acurácia
+  const pct=game.respondidas?Math.round(game.acertos/game.respondidas*100):0;
+  $('#acc-pct').textContent=pct+'%';
+  // xp bar
+  const need=xpToNext(game.level);
+  const cur=game.xp - acumuladoAte(game.level);
+  $('#xpfill').style.width=Math.min(100,cur/need*100)+'%';
+  $('#xplabel').textContent=game.xp+' XP';
+  drawEcg();
+  // combo
+  $('#combo').textContent='×'+(game.combo||1);
+  // trilha
+  let dots='';
+  game.order.forEach((qi,i)=>{
+    let cls='dot';
+    if(i<game.index){ cls+= game._results&&game._results[i]===true?' done': game._results&&game._results[i]===false?' miss':' done'; }
+    else if(i===game.index) cls+=' now';
+    dots+=`<span class="${cls}"></span>`;
+  });
+  $('#track').innerHTML=dots;
+}
+function acumuladoAte(lv){let s=0;for(let i=1;i<lv;i++)s+=xpToNext(i);return s;}
+// linha de batimento na barra de XP
+function drawEcg(){
+  const svg=$('#ecgXp'); let p='M0,8 ';
+  for(let x=0;x<=200;x+=20){ p+=`L${x+6},8 L${x+9},2 L${x+12},14 L${x+15},8 L${x+20},8 `; }
+  svg.innerHTML=`<polyline points="" fill="none"/><path d="${p}" fill="none" stroke="#04141a" stroke-width="1.4" opacity=".7"/>`;
+}
+
+function renderQuestion(){
+  game.answered=false;
+  const qi=game.order[game.index];
+  const q=QUESTOES[qi];
+  $('#qtag').textContent=q.tema;
+  $('#qtag').className='qtag dif-'+q.dificuldade;
+  $('#figure').innerHTML=(FIGURAS[q.figura]||FIGURAS.alert)();
+  $('#qtext').textContent=q.enunciado;
+  // alternativas embaralhadas
+  const ord=game.altOrder[qi];
+  const alts=$('#alts'); alts.innerHTML='';
+  ord.forEach((origIdx,pos)=>{
+    const letra=['A','B','C','D'][pos];
+    const b=document.createElement('button');
+    b.className='alt'; b.dataset.orig=origIdx;
+    b.innerHTML=`<span class="key">${letra}</span><span>${q.alternativas[origIdx]}</span>`;
+    b.addEventListener('click',()=>answer(pos));
+    alts.appendChild(b);
+  });
+  // explicação oculta
+  $('#explain').className='explain';
+  // timer
+  startTimer();
+  renderHUD();
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 7 · TIMER
+   ════════════════════════════════════════════════════════════════════ */
+function startTimer(){
+  clearInterval(game.tInt);
+  if(game.cfg.timer===0){ $('#timerfill').style.width='100%'; $('#tnum').textContent='∞'; return; }
+  game.tLeft=game.cfg.timer; updateTimerUI();
+  game.tInt=setInterval(()=>{
+    game.tLeft-=1; updateTimerUI();
+    if(game.tLeft<=5 && game.tLeft>0) sndTick();
+    if(game.tLeft<=0){ clearInterval(game.tInt); timeUp(); }
+  },1000);
+}
+function updateTimerUI(){
+  const f=$('#timerfill'); const pct=game.tLeft/game.cfg.timer*100;
+  f.style.width=Math.max(0,pct)+'%';
+  f.classList.toggle('warn',game.tLeft<=5);
+  $('#tnum').textContent=game.tLeft;
+}
+function timeUp(){ if(!game.answered) answer(-1,true); }
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 8 · RESPOSTA + FEEDBACK SENSORIAL
+   ════════════════════════════════════════════════════════════════════ */
+function answer(pos,timeout=false){
+  if(game.answered) return;
+  game.answered=true; clearInterval(game.tInt);
+  const qi=game.order[game.index]; const q=QUESTOES[qi];
+  const ord=game.altOrder[qi];
+  const chosenOrig = pos>=0 ? ord[pos] : -1;
+  const acertou = chosenOrig===q.correta;
+  game.respondidas++;
+  game._results=game._results||{};
+  game._results[game.index]=acertou;
+
+  // marca alternativas
+  const btns=$$('#alts .alt');
+  btns.forEach((b,i)=>{
+    b.classList.add('disabled');
+    const orig=+b.dataset.orig;
+    if(orig===q.correta) b.classList.add('correct');
+    if(i===pos && !acertou) b.classList.add('wrong');
+  });
+
+  if(acertou){
+    game.acertos++; game.combo++; game.maxCombo=Math.max(game.maxCombo,game.combo);
+    // XP: base + bônus velocidade + bônus combo, × multiplicador do modo
+    const speedBonus = game.cfg.timer? Math.round(game.tLeft/game.cfg.timer*60):0;
+    const ganho = Math.round((100 + speedBonus + (game.combo-1)*25) * game.cfg.mult);
+    addXP(ganho);
+    sndCorrect(game.combo);
+    flash('green'); confettiBurst(game.combo);
+    bumpCombo();
+    if(game.combo>=3) miniFinale(game.combo); // celebração curta escalando com combo
+  }else{
+    game.combo=0;
+    sndWrong(); flash('red'); shakeApp();
+    if(game.cfg.vidas!==Infinity){ game.vidas--; }
+  }
+
+  // explicação slide-in
+  const ex=$('#explain');
+  $('#explain-h').textContent=acertou?'✓ Correto!':(timeout?'⏱ Tempo esgotado':'✗ Resposta incorreta');
+  $('#explain-p').textContent=q.explicacao;
+  ex.className='explain show '+(acertou?'ok':'no');
+
+  renderHUD();
+  persistProgress();
+
+  // game over?
+  if(game.cfg.vidas!==Infinity && game.vidas<=0){
+    $('#btn-next').textContent='Ver resultado ▸';
+    game._gameover=true;
+  }else if(game.index>=game.order.length-1){
+    $('#btn-next').textContent='Ver resultado ▸';
+  }else{
+    $('#btn-next').innerHTML='Próxima ▸ <span class="mono" style="opacity:.6;font-size:12px">(Enter)</span>';
+  }
+  $('#btn-next').focus();
+}
+function bumpCombo(){const c=$('#combo');c.classList.add('bump');setTimeout(()=>c.classList.remove('bump'),160);}
+function addXP(g){
+  game.xp+=g;
+  while(game.xp >= acumuladoAte(game.level)+xpToNext(game.level)){
+    game.level++; sndLevel();
+    confettiBurst(8);
+  }
+}
+function flash(color){const f=$('#flash');f.className='flash '+color;void f.offsetWidth;}
+function shakeApp(){const a=$('#app');a.classList.add('shake');setTimeout(()=>a.classList.remove('shake'),420);}
+
+$('#btn-next').addEventListener('click',nextQuestion);
+function nextQuestion(){
+  if(game._gameover || game.index>=game.order.length-1){ endGame(); return; }
+  game.index++; renderQuestion();
+}
+
+/* teclado: A–D respondem, Enter avança */
+document.addEventListener('keydown',e=>{
+  if(!$('#scr-game').classList.contains('active'))return;
+  if($('#modal-code').classList.contains('show')||$('#modal-resume').classList.contains('show'))return;
+  const k=e.key.toLowerCase();
+  if(!game.answered && ['a','b','c','d'].includes(k)){ const pos=['a','b','c','d'].indexOf(k); const btns=$$('#alts .alt'); if(btns[pos]) answer(pos); }
+  else if(e.key==='Enter' && game.answered){ nextQuestion(); }
+});
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 9 · RESULTADO + RANKING
+   ════════════════════════════════════════════════════════════════════ */
+const TIERS=[
+  {min:0,  nome:'Interno'},
+  {min:50, nome:'Residente'},
+  {min:70, nome:'Especialista'},
+  {min:85, nome:'Mestre'},
+  {min:100,nome:'Lendário'},
+];
+function tierFor(pct){let t=TIERS[0];for(const x of TIERS)if(pct>=x.min)t=x;return t.nome;}
+function medalFor(pct,gabarito){ if(gabarito)return '🏆'; if(pct>=90)return '🥇'; if(pct>=75)return '🥈'; if(pct>=60)return '🥉'; return '🎖️'; }
+
+function endGame(){
+  clearInterval(game.tInt);
+  localStorage.removeItem(LS.progress(player.email)); // partida concluída
+  const pct=game.respondidas?Math.round(game.acertos/game.respondidas*100):0;
+  const gabarito = game.acertos===QUESTOES.length;
+  const tempo=Math.round((Date.now()-game.startTime)/1000);
+  $('#r-tier').textContent=tierFor(pct);
+  $('#r-medal').textContent=medalFor(pct,gabarito);
+  $('#r-acertos').textContent=game.acertos+'/'+game.respondidas;
+  $('#r-pct').textContent=pct+'%';
+  $('#r-combo').textContent='×'+game.maxCombo;
+  $('#r-xp').textContent=game.xp;
+  $('#r-lv').textContent=game.level;
+  $('#r-tempo').textContent=tempo+'s';
+  $('#r-sub').textContent = game.cfg.pontua
+    ? `Modo ${game.cfg.label} · pontuação registrada no ranking`
+    : `Modo Treino · não pontua no ranking`;
+
+  // ranking (somente modos pontuáveis)
+  if(game.cfg.pontua){
+    registrarRanking(pct);
+    encaminharLead({ _tipo:'resultado', Modo:game.cfg.label,
+      Acertos:game.acertos+'/'+game.respondidas, Aproveitamento:pct+'%',
+      'Maior combo':'×'+game.maxCombo, XP:game.xp, 'Nível':game.level, Tempo:tempo+'s' });
+  }
+
+  showScreen('scr-result');
+
+  // finalização científica animada para ≥75%
+  if(pct>=75){ sndFanfare(); finaleSequence(); }
+  else { confettiBurst(4); }
+}
+function registrarRanking(pct){
+  const r=loadRanking();
+  const idx=r.findIndex(x=>x.email===player.email);
+  const entry={email:player.email,name:player.name,acertos:game.acertos,pct,xp:game.xp,lv:game.level,combo:game.maxCombo};
+  // mantém o melhor desempenho do jogador
+  if(idx>=0){
+    const old=r[idx];
+    const score=e=>e.acertos*1000+e.xp;
+    r[idx] = score(entry)>=score(old)?entry:old;
+  }else r.push(entry);
+  saveRanking(r);
+}
+function renderRanking(){
+  const r=loadRanking().slice().sort((a,b)=> (b.acertos*1000+b.xp)-(a.acertos*1000+a.xp));
+  const box=$('#rank-list');
+  if(!r.length){ box.innerHTML='<div class="empty">Nenhuma pontuação ainda. Jogue uma partida no modo Clássico ou Sobrevivência!</div>'; return; }
+  box.innerHTML=r.map((e,i)=>{
+    const me=player&&e.email===player.email?' me':'';
+    const med = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º';
+    return `<div class="rank${me}">
+      <span class="pos">${med}</span>
+      <span class="nm">${escapeHtml(e.name||'—')}</span>
+      <span class="meta">Lv <b>${e.lv}</b> · combo ×${e.combo} · ${e.pct}%<br>${e.acertos} acertos · ${e.xp} XP</span>
+    </div>`;
+  }).join('');
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+$('#btn-replay').addEventListener('click',()=>startGame(game.mode));
+$('#btn-menu').addEventListener('click',goMenu);
+$('#btn-rank-from-result').addEventListener('click',()=>{renderRanking();showScreen('scr-rank');});
+$('#btn-ranking2').addEventListener('click',()=>{renderRanking();showScreen('scr-rank');});
+$('#lnk-ranking').addEventListener('click',()=>{renderRanking();showScreen('scr-rank');});
+$('#btn-back').addEventListener('click',()=>{ showScreen(player?(game?'scr-result':'scr-menu'):'scr-login'); });
+$('#btn-rank-from-result') && null;
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 10 · ANIMAÇÕES — confetes/serpentinas + finalização científica
+   ════════════════════════════════════════════════════════════════════ */
+const fx=$('#fx'), fctx=fx.getContext('2d');
+const fin=$('#finale'), finctx=fin.getContext('2d');
+function fitCanvas(c){c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;
+  c.getContext('2d').setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);}
+function fitAll(){fitCanvas(fx);fitCanvas(fin);} addEventListener('resize',fitAll); fitAll();
+
+let confetti=[];
+const COLORS=['#23e7d6','#ff3d8b','#ffae39','#39ff9e','#7af5ea','#ffd54a'];
+function confettiBurst(intensity=3){
+  const n=Math.min(120,18*intensity);
+  for(let i=0;i<n;i++){
+    confetti.push({
+      x:innerWidth/2+(Math.random()-.5)*160, y:innerHeight*0.35,
+      vx:(Math.random()-.5)*9, vy:Math.random()*-10-4,
+      g:.32+Math.random()*.2, s:5+Math.random()*7,
+      rot:Math.random()*6.28, vr:(Math.random()-.5)*.4,
+      col:COLORS[Math.floor(Math.random()*COLORS.length)],
+      streamer:Math.random()<.3, life:1
+    });
+  }
+  if(!confettiRunning) runConfetti();
+}
+let confettiRunning=false;
+function runConfetti(){
+  confettiRunning=true;
+  (function loop(){
+    fctx.clearRect(0,0,fx.width,fx.height);
+    confetti=confetti.filter(p=>p.y<innerHeight+40 && p.life>0);
+    confetti.forEach(p=>{
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vx*=.99;
+      fctx.save(); fctx.translate(p.x,p.y); fctx.rotate(p.rot); fctx.fillStyle=p.col;
+      if(p.streamer){ fctx.fillRect(-1.5,-p.s,3,p.s*2.4); }
+      else fctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);
+      fctx.restore();
+    });
+    if(confetti.length) requestAnimationFrame(loop);
+    else { fctx.clearRect(0,0,fx.width,fx.height); confettiRunning=false; }
+  })();
+}
+
+/* mini-celebração a cada acerto em combo: raios + DNA curtos */
+function miniFinale(combo){
+  const rays=Math.min(combo,8);
+  const cx=innerWidth/2, cy=innerHeight*0.32, t0=performance.now(), dur=420;
+  (function loop(now){
+    const k=(now-t0)/dur; if(k>1){fctx.clearRect(0,0,fx.width,fx.height);return;}
+    // mantém confetes; desenha raios por cima
+    fctx.save(); fctx.globalCompositeOperation='lighter';
+    for(let i=0;i<rays;i++){
+      const a=i/rays*6.28 + k*1.2, len=60+ k*120;
+      const x2=cx+Math.cos(a)*len, y2=cy+Math.sin(a)*len;
+      fctx.strokeStyle=`rgba(122,245,234,${(1-k)*.5})`; fctx.lineWidth=2;
+      fctx.beginPath(); fctx.moveTo(cx,cy); fctx.lineTo(x2,y2); fctx.stroke();
+    }
+    fctx.restore();
+    requestAnimationFrame(loop);
+  })(t0);
+}
+
+/* FINALIZAÇÃO CIENTÍFICA (≥75%) — DNA, peptídeos, rede neural, raios, flash */
+function finaleSequence(){
+  fin.style.display='block';
+  const W=()=>innerWidth, H=()=>innerHeight;
+  const cx=()=>innerWidth/2, cy=()=>innerHeight/2;
+  const t0=performance.now(); const DUR=3600;
+  // elementos vindo das bordas
+  const helices=[], peptides=[], nodes=[];
+  for(let i=0;i<6;i++){
+    const a=i/6*6.28;
+    helices.push({a,from:1.0,delay:i*60});
+  }
+  for(let i=0;i<22;i++){
+    const a=Math.random()*6.28;
+    peptides.push({a,r0:0.9+Math.random()*0.3,size:5+Math.random()*5,hue:i});
+  }
+  // rede neural: nós em anéis
+  for(let ring=1;ring<=3;ring++){
+    const count=ring*6;
+    for(let i=0;i<count;i++){
+      nodes.push({a:i/count*6.28,ring,lit:0});
+    }
+  }
+  let gzShown=false;
+  (function loop(now){
+    const k=(now-t0)/DUR; // 0→1
+    finctx.clearRect(0,0,fin.width,fin.height);
+    const CX=cx(),CY=cy();
+    // fundo glow
+    const grd=finctx.createRadialGradient(CX,CY,0,CX,CY,Math.max(W(),H())*.6);
+    grd.addColorStop(0,`rgba(8,20,32,${0.0})`); grd.addColorStop(1,'rgba(2,5,12,0)');
+    finctx.fillStyle=grd; finctx.fillRect(0,0,W(),H());
+
+    // 1) peptídeos (esferas de aminoácidos) voando de fora p/ dentro
+    peptides.forEach(p=>{
+      const prog=Math.min(1,k*1.4);
+      const r=(p.r0*(1-prog))*Math.min(W(),H())*0.55 + 30;
+      const x=CX+Math.cos(p.a)*r, y=CY+Math.sin(p.a)*r;
+      finctx.save(); finctx.globalCompositeOperation='lighter';
+      finctx.fillStyle=COLORS[p.hue%COLORS.length];
+      finctx.globalAlpha=0.6*prog;
+      finctx.beginPath(); finctx.arc(x,y,p.size,0,6.28); finctx.fill();
+      finctx.restore();
+    });
+
+    // 2) hélices de DNA convergindo
+    helices.forEach(h=>{
+      const prog=Math.min(1,Math.max(0,(now-t0-h.delay)/ (DUR*0.6)));
+      const baseR=(1-prog)*Math.min(W(),H())*0.5 + 40;
+      finctx.save(); finctx.globalCompositeOperation='lighter';
+      for(let s=0;s<14;s++){
+        const tt=s/14*6.28 + k*4;
+        const along=baseR*(1 - s/30);
+        const x=CX+Math.cos(h.a)*along, y=CY+Math.sin(h.a)*along;
+        const off=Math.sin(tt)*10;
+        const px=x+Math.cos(h.a+1.57)*off, py=y+Math.sin(h.a+1.57)*off;
+        const px2=x-Math.cos(h.a+1.57)*off, py2=y-Math.sin(h.a+1.57)*off;
+        finctx.fillStyle=`rgba(35,231,214,${.6*prog})`; finctx.beginPath();finctx.arc(px,py,2.4,0,6.28);finctx.fill();
+        finctx.fillStyle=`rgba(255,61,139,${.6*prog})`; finctx.beginPath();finctx.arc(px2,py2,2.4,0,6.28);finctx.fill();
+        if(s%2===0){finctx.strokeStyle=`rgba(122,245,234,${.3*prog})`;finctx.beginPath();finctx.moveTo(px,py);finctx.lineTo(px2,py2);finctx.stroke();}
+      }
+      finctx.restore();
+    });
+
+    // 3) rede neural acende de fora p/ dentro + raios convergindo
+    finctx.save(); finctx.globalCompositeOperation='lighter';
+    nodes.forEach(nd=>{
+      const ringProg=Math.max(0,Math.min(1,(k-(0.2+ (3-nd.ring)*0.12))*4));
+      const r=nd.ring*46;
+      const x=CX+Math.cos(nd.a+k)*r, y=CY+Math.sin(nd.a+k)*r;
+      finctx.fillStyle=`rgba(122,245,234,${.8*ringProg})`;
+      finctx.beginPath();finctx.arc(x,y,3,0,6.28);finctx.fill();
+      if(ringProg>0.2){
+        finctx.strokeStyle=`rgba(35,231,214,${.25*ringProg})`;finctx.lineWidth=1;
+        finctx.beginPath();finctx.moveTo(x,y);finctx.lineTo(CX,CY);finctx.stroke();
+      }
+    });
+    // raios luminosos convergindo
+    if(k>0.45){
+      const rk=(k-0.45)/0.4;
+      for(let i=0;i<12;i++){
+        const a=i/12*6.28+k*0.6, len=Math.max(W(),H())*0.5*(1-rk);
+        finctx.strokeStyle=`rgba(255,213,74,${.5*rk})`;finctx.lineWidth=2;
+        finctx.beginPath();finctx.moveTo(CX+Math.cos(a)*len,CY+Math.sin(a)*len);finctx.lineTo(CX,CY);finctx.stroke();
+      }
+    }
+    finctx.restore();
+
+    // 4) flash + "Parabéns!" + troféu
+    if(k>0.7 && !gzShown){
+      gzShown=true;
+      flashWhite();
+      const gz=$('#gz'); gz.style.display='flex';
+      gz.querySelector('.gztxt').innerHTML='Parabéns! <div style="font-size:.6em;margin-top:6px">🏆</div>';
+      confettiBurst(8);
+      setTimeout(()=>confettiBurst(6),400);
+    }
+
+    if(k<1.05) requestAnimationFrame(loop);
+    else{ finctx.clearRect(0,0,fin.width,fin.height); fin.style.display='none';
+      setTimeout(()=>{$('#gz').style.display='none';},1400); }
+  })(t0);
+}
+function flashWhite(){
+  const f=$('#flash'); f.style.background='radial-gradient(circle,rgba(255,255,255,.7),transparent 70%)';
+  f.className='flash'; f.style.opacity='.9';
+  let o=.9; (function fade(){o-=.06; f.style.opacity=o; if(o>0)requestAnimationFrame(fade); else f.style.background='';})();
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SEÇÃO 11 · RODAPÉ / FONTE CIENTÍFICA
+   ════════════════════════════════════════════════════════════════════ */
+const FONTE = `Conteúdo baseado em literatura/consenso de toxina botulínica estética
+  (ex.: Carruthers &amp; Carruthers; diretrizes de consenso sobre uso de neuromoduladores;
+  bulas dos fabricantes). Conteúdo educativo — não substitui treinamento clínico
+  presencial nem a bula do produto. Imagens clínicas reais não são reproduzidas.`;
+document.querySelectorAll('.foot').forEach(f=>{ if(!f.innerHTML.trim()) f.innerHTML=FONTE; });
+
+/* PONTO DE INTEGRAÇÃO BACKEND (ranking/persistência remota) ──────────────
+   Atualmente ranking e progresso usam localStorage (compatível com TED-SIMU).
+   Para sincronizar entre dispositivos, plugue aqui um backend (Vercel KV,
+   Supabase, GitHub Gist, etc.) em loadRanking/saveRanking e persistProgress. */
+
+/* inicialização */
+showScreen('scr-login');
+</script>
+</body>
+</html>
